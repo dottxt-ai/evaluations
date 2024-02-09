@@ -57,6 +57,7 @@ def update_evaluation_end(db, eval_id):
             UPDATE evaluations SET end_time = ? WHERE rowid = ?
             """, (current_time, eval_id)
         ).fetchall()
+        con.commit()
     return result
 
 def eval_results(db, eval_id):
@@ -69,7 +70,7 @@ def eval_results(db, eval_id):
             from results
             where eval_id = ?
             group by eval_id)
-            SELECT model, prompt_name, struct_name, total, pe, acc
+            SELECT model, prompt_name, struct_name, total, acc, pe
             from evaluations
             join summary
             on evaluations.rowid = summary.eval_id;
