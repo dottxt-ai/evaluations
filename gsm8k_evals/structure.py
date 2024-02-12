@@ -19,6 +19,7 @@ regex_hr_50_500 = r'\{\n    "reasoning": "[\w \d\.\*\-=\+,\?/]{50,500}",\n    "a
 regex_hr_50_1000 = r'\{\n    "reasoning": "[\w\s\d\.\*\-=+,\?/]{50,1000}",\n    "answer": [1-9][0-9]{0,9}\n   \}'
 regex_qa_300 = r'A: [\w \d\.\*\-=\+,\?/]{10,300}\. The answer is [1-9][0-9]{0,9}\.\n'
 regex_qa_50_500 = r'A: [\w \d\.\*\-=\+,\?/]{50,500}\. The answer is [1-9][0-9]{0,9}\.\n'
+regex_qa_50_700 = r'A: [\w \d\.\*\-=\+,\?/]{50,700}\. The answer is [1-9][0-9]{0,9}\.\n'
 
 def process_raw_json_response(response):
     return json.loads(response)['answer']
@@ -102,6 +103,10 @@ struct_info = {
     },
     'regex_qa_50_500': {
         'regex': regex_qa_50_500,
+        'processor': process_eval_harness
+    },
+    'regex_qa_50_700': {
+        'regex': regex_qa_50_700,
         'processor': process_eval_harness
     }
 }

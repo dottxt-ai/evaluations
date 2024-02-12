@@ -68,6 +68,12 @@ if __name__ == "__main__":
                         dest='db_name',
                         default='results.db',
                         help='sqlite database for storing results')
+    parser.add_argument('--sub_set',
+                        dest='sub_set',
+                        default='test',
+                        choices=['test','train'],
+                        help='specify test or train set'
+                        )
     
     args = parser.parse_args()
     device=args.device
@@ -77,6 +83,7 @@ if __name__ == "__main__":
     model_name = args.model_name
     sampler = samplers[args.sampler]
     db_name = args.db_name
+    sub_set = args.sub_set
 
     db_tools.create_evaluation_table(db_name)
     db_tools.create_result_table(db_name)
@@ -84,6 +91,7 @@ if __name__ == "__main__":
         "db": db_name,
         "model": model_name,
         "dataset": "gsm8k",
+        "sub_set": sub_set,
         "start_time": datetime.now(),
         "sampler": args.sampler,
         "prompt_name": args.prompt,
@@ -94,14 +102,14 @@ if __name__ == "__main__":
     print("Loading dataset...")
     dataset = load_dataset("gsm8k", "main")
     numeric_answers = [process_answer(answer.split("#### ")[-1])
-            for answer in dataset['test']['answer']]
+            for answer in dataset[sub_set]['answer']]
         
-    print(f"Test questions: {len(dataset['test'])}")
+    print(f"Test questions: {len(dataset[sub_set])}")
     if regex_structure is None:
         print("performing unstructured generation")
     else:
         print("----Debugging Regex----")
-        prompt_sample = prompter(dataset['test']['question'][0])
+        prompt_sample = prompter(dataset[sub_set]['question'][0])
         print(f"REGEX: {regex_structure}")
         print("Testing regex (should find 8 samples):")
         regex_found = re.findall(regex_structure,prompt_sample)
@@ -110,7 +118,10 @@ if __name__ == "__main__":
             print(found)
     print("---Loading Model----")
     model = outlines.models.transformers(
-        model_name,device=device
+        model_name,device=device,
+        model_kwargs={
+            'torch_dtype': torch.float16
+        }
         )
     print("---Building Generator---")
     if regex_structure is None:
@@ -124,7 +135,7 @@ if __name__ == "__main__":
             regex_structure,
             sampler=sampler)
     print("---Sampling from Generator---")
-    test_response = generator(prompter(dataset['test']['question'][19]), 
+    test_response = generator(prompter(dataset[sub_set]['question'][19]), 
                             max_tokens=512)
     print("------raw response--")
     print(test_response)
@@ -141,7 +152,7 @@ if __name__ == "__main__":
             'question_number': i,
             'start_time': datetime.now()
         }
-        q_data['realized_prompt'] = prompter(dataset['test']['question'][i])
+        q_data['realized_prompt'] = prompter(dataset[sub_set]['question'][i])
         q_data['raw_answer'] = generator(q_data['realized_prompt'], max_tokens=512)
         try:
             q_data['answer'] = process_response(q_data['raw_answer'])

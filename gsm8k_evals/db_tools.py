@@ -5,7 +5,7 @@ def create_evaluation_table(db):
     with sqlite3.connect(db) as con:
         cur = con.cursor()
         result = cur.execute("""
-        CREATE TABLE IF NOT EXISTS evaluations(model, dataset, 
+        CREATE TABLE IF NOT EXISTS evaluations(model, dataset, sub_set, 
         start_time, end_time, sampler, prompt_name, struct_name);
         """).fetchall()
         con.commit()
@@ -21,13 +21,13 @@ def create_result_table(db):
         con.commit()
     return result
 
-def add_evaluation(db, model, dataset, start_time, sampler, prompt_name, struct_name):
+def add_evaluation(db, model, dataset, sub_set, start_time, sampler, prompt_name, struct_name):
     with sqlite3.connect(db) as con:
         cur = con.cursor()
         cur.execute("""
-        INSERT INTO evaluations (model, dataset, start_time, sampler, prompt_name, struct_name)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """, [model, dataset, start_time, sampler, prompt_name, struct_name])
+        INSERT INTO evaluations (model, dataset, sub_set, start_time, sampler, prompt_name, struct_name)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, [model, dataset, sub_set, start_time, sampler, prompt_name, struct_name])
         result = cur.lastrowid
         con.commit()
     return result
@@ -82,3 +82,22 @@ def display_eval_results(db, eval_id):
     out = "{0}-{1}-{2} {3} obs - ACC: {4:0.4f} PE: {5:0.4f} time: <TBD>"
     result = eval_results(db, eval_id)
     return out.format(*result)
+
+def leaderboard(db, min_obs=0):
+    with sqlite3.connect(db) as con:
+        cur = con.cursor()
+        result = cur.execute(
+            """
+            with summary as
+            (SELECT eval_id, count(eval_id) as total, avg(bad_parse) as pe, avg(correct) as acc
+            from results
+            group by eval_id)
+            SELECT model, sub_set, prompt_name, struct_name, sampler, total, acc, pe
+            from evaluations
+            join summary
+            on evaluations.rowid = summary.eval_id
+            where total > ?
+            order by acc desc, pe
+            """, (min_obs,)
+        ).fetchall()
+    return result
