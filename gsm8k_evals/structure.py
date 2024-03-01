@@ -9,12 +9,15 @@ regex_m_400 = r'\{"reasoning": "[\w \d\.\*\-=\+,\?/]{10,400}", "answer": [1-9][0
 regex_m_100_300 = r'\{"reasoning": "[\w \d\.\*\-=\+,\?/]{100,400}", "answer": [1-9][0-9]{0,10}\}'
 regex_m_100_400 = r'\{"reasoning": "[\w \d\.\*\-=\+,\?/]{100,400}", "answer": [1-9][0-9]{0,10}\}'
 regex_m_50_500 = r'\{"reasoning": "[\w \d\.\*\-=\+,\?/]{50,500}", "answer": [1-9][0-9]{0,10}\}'
+regex_m_50_700 = r'\{"reasoning": "[\w \d\.\*\-=\+,\?/]{50,500}", "answer": [1-9][0-9]{0,10}\}'
 regex_hr_300 = r'\{\n    "reasoning": "[\w \d\.\*\-=\+,\?/]{10,300}",\n    "answer": [1-9][0-9]{0,9}\n   \}'
 regex_hr_100_400 = r'\{\n    "reasoning": "[\w \d\.\*\-=\+,\?/]{100,400}",\n    "answer": [1-9][0-9]{0,9}\n   \}'
 regex_hr_200_400 = r'\{\n    "reasoning": "[\w \d\.\*\-=\+,\?/]{200,400}",\n    "answer": [1-9][0-9]{0,9}\n   \}'
 regex_hr_100_500 = r'\{\n    "reasoning": "[\w \d\.\*\-=\+,\?/]{100,500}",\n    "answer": [1-9][0-9]{0,9}\n   \}'
 regex_hr_50_400 = r'\{\n    "reasoning": "[\w \d\.\*\-=\+,\?/]{50,400}",\n    "answer": [1-9][0-9]{0,9}\n   \}'
 regex_hr_50_500 = r'\{\n    "reasoning": "[\w \d\.\*\-=\+,\?/]{50,500}",\n    "answer": [1-9][0-9]{0,9}\n   \}'
+regex_hr_50_700 = r'\{\n    "reasoning": "[\w \d\.\*\-=\+,\?/]{50,700}",\n    "answer": [1-9][0-9]{0,9}\n   \}'
+
 # very similar to the data set range
 regex_hr_50_1000 = r'\{\n    "reasoning": "[\w\s\d\.\*\-=+,\?/]{50,1000}",\n    "answer": [1-9][0-9]{0,9}\n   \}'
 regex_qa_300 = r'A: [\w \d\.\*\-=\+,\?/]{10,300}\. The answer is [1-9][0-9]{0,9}\.\n'
@@ -69,6 +72,10 @@ struct_info = {
         'regex': regex_m_50_500,
         'processor': process_raw_json_response
     },
+    'regex_m_50_700': {
+        'regex': regex_m_50_700,
+        'processor': process_raw_json_response
+    },
     'regex_hr_300': {
         'regex': regex_hr_300,
         'processor': process_raw_json_response
@@ -91,6 +98,10 @@ struct_info = {
     },
     'regex_hr_50_500':{
         'regex': regex_hr_50_500,
+        'processor': process_raw_json_response
+    },
+    'regex_hr_50_700':{
+        'regex': regex_hr_50_700,
         'processor': process_raw_json_response
     },
     'regex_hr_50_1000':{

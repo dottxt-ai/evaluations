@@ -97,7 +97,7 @@ def leaderboard(db, min_obs=0):
             join summary
             on evaluations.rowid = summary.eval_id
             where total > ?
-            order by acc desc, pe
+            order by model, acc desc, pe
             """, (min_obs,)
         ).fetchall()
     return result

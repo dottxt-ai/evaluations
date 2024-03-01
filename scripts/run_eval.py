@@ -1,3 +1,4 @@
+import transformers
 from datasets import load_dataset
 import sys
 from datetime import datetime
@@ -26,6 +27,7 @@ samplers = {
 }
 
 if __name__ == "__main__":
+    print(transformers.__version__)
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('-n',
                         dest='n',
@@ -118,9 +120,15 @@ if __name__ == "__main__":
             print(found)
     print("---Loading Model----")
     model = outlines.models.transformers(
-        model_name,device=device,
+        model_name,
+        device=device,
         model_kwargs={
-            'torch_dtype': torch.float16
+            'torch_dtype': torch.float16,
+            #'trust_remote_code': True
+        },
+        tokenizer_kwargs={
+            'torch_dtype': torch.float16,
+            #'trust_remote_code': True
         }
         )
     print("---Building Generator---")
