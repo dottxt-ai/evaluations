@@ -4,7 +4,7 @@ import sys
 from datetime import datetime
 import numpy as np
 import outlines
-from outlines.generate.samplers import greedy, multinomial
+from outlines.samplers import greedy, multinomial
 import torch
 import json
 from gsm8k_evals.prompts import prompt_map
@@ -22,8 +22,9 @@ def process_answer(raw_answer):
 
 # should eventually be moved somewhere
 samplers = {
-    'greedy': greedy,
-    'multinomial': multinomial
+    'greedy': greedy(),
+    # update these to use different k etc.
+    'multinomial': multinomial()
 }
 
 if __name__ == "__main__":
@@ -134,8 +135,7 @@ if __name__ == "__main__":
     print("---Building Generator---")
     if regex_structure is None:
         stop_str = struct_info[args.struct]['stop_at']
-        generator = outlines.generate.text(model, 
-                                        stop_at=stop_str, 
+        generator = outlines.generate.text(model,
                                         sampler=sampler)
     else:
         generator = outlines.generate.regex(
@@ -143,7 +143,14 @@ if __name__ == "__main__":
             regex_structure,
             sampler=sampler)
     print("---Sampling from Generator---")
-    test_response = generator(prompter(dataset[sub_set]['question'][19]), 
+    if regex_structure is None:
+        stop_str = struct_info[args.struct]['stop_at']
+        test_response = generator(
+            prompter(dataset[sub_set]['question'][19]),
+            stop_at=stop_str,
+            max_tokens=512)
+    else:
+        test_response = generator(prompter(dataset[sub_set]['question'][19]), 
                             max_tokens=512)
     print("------raw response--")
     print(test_response)
