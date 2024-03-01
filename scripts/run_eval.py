@@ -41,6 +41,11 @@ if __name__ == "__main__":
                         default=0,
                         type=int,
                         help='index to start sampling')
+    parser.add_argument('-b',
+                        dest='b',
+                        default=1,
+                        type=int,
+                        help='specify batch size')
     parser.add_argument('--prompt',
                         dest='prompt',
                         default='standard_8',
@@ -87,7 +92,8 @@ if __name__ == "__main__":
     sampler = samplers[args.sampler]
     db_name = args.db_name
     sub_set = args.sub_set
-
+    batch_size = args.b
+    
     db_tools.create_evaluation_table(db_name)
     db_tools.create_result_table(db_name)
     eval_args = {
@@ -98,7 +104,7 @@ if __name__ == "__main__":
         "start_time": datetime.now(),
         "sampler": args.sampler,
         "prompt_name": args.prompt,
-        "struct_name": args.struct
+        "struct_name": args.struct,
     }
     eval_id = db_tools.add_evaluation(**eval_args)
 
@@ -160,41 +166,54 @@ if __name__ == "__main__":
     last_i = args.i + args.n
 
     start_t = datetime.now()
-    for i in range(args.i,last_i):
-        q_data = {
-            'db': db_name,
-            'eval_id': eval_id,
-            'question_number': i,
-            'start_time': datetime.now()
-        }
-        q_data['realized_prompt'] = prompter(dataset[sub_set]['question'][i])
-        q_data['raw_answer'] = generator(q_data['realized_prompt'], max_tokens=512)
-        try:
-            q_data['answer'] = process_response(q_data['raw_answer'])
-            q_data['bad_parse'] = False
-        except json.JSONDecodeError as e:
-            print(f"error at q:{i}")
-            print(q_data['raw_answer'])
-            q_data['answer'] = 0
-            q_data['bad_parse'] = True
-        # just a heuristic    
-        if (regex_structure is None) and (q_data['answer'] == 0):
-            q_data['bad_parse'] = True
-       
-        q_data['correct'] = q_data['answer'] == numeric_answers[i]
-        if q_data['correct']:
-            print('.',end='')
-        elif q_data['bad_parse']:
-            print('X',end='')
-        else:
-            print('F',end='')
-        sys.stdout.flush()
-        q_data['end_time'] = datetime.now()
-        db_tools.add_result(**q_data)
+    # need to update this to work with batches.
+    for start_i in range(args.i,last_i, batch_size):
+        end_i = min(start_i+batch_size,last_i)
+        prompts = [prompter(dataset[sub_set]['question'][i])
+                   for i in range(start_i,end_i)]
+        raw_answers = generator(prompts, max_tokens=512)
+        # I think this should be considered a bug in outlines
+        if batch_size == 1:
+            raw_answers = [raw_answers]
+        for p_i, _ in enumerate(prompts):
+            i = start_i + p_i
+            q_data = {
+                'db': db_name,
+                'eval_id': eval_id,
+                'question_number': i,
+                'start_time': datetime.now()
+            }
+            q_data['realized_prompt'] = prompts[p_i]
+            q_data['raw_answer'] = raw_answers[p_i]
+            try:
+                q_data['answer'] = process_response(q_data['raw_answer'])
+                q_data['bad_parse'] = False
+            except json.JSONDecodeError as e:
+                print(f"error at q:{i}")
+                print(q_data['raw_answer'])
+                q_data['answer'] = 0
+                q_data['bad_parse'] = True
+            # just a heuristic    
+            if (regex_structure is None) and (q_data['answer'] == 0):
+                q_data['bad_parse'] = True
+        
+            q_data['correct'] = q_data['answer'] == numeric_answers[i]
+            if q_data['correct']:
+                print('.',end='')
+            elif q_data['bad_parse']:
+                print('X',end='')
+            else:
+                print('F',end='')
+            # time is a bit off now for batching
+            # this should eventually be cleaned up.
+            q_data['end_time'] = datetime.now()
+            db_tools.add_result(**q_data)
+            sys.stdout.flush()
+        # this won't work right with batching    
         if not(i == 0) and (i % 25 == 0):
             print("")
             print(f"[{i}] ",end='')
             print(db_tools.display_eval_results(db_name, eval_id))
-    print("")
+        print("")
     db_tools.update_evaluation_end(db_name, eval_id)
     print(db_tools.display_eval_results(db_name, eval_id))
