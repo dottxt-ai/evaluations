@@ -4,7 +4,7 @@ import sys
 from datetime import datetime
 import numpy as np
 import outlines
-from outlines.samplers import greedy, multinomial
+from outlines.samplers import greedy, multinomial, beam_search
 import torch
 import json
 from gsm8k_evals.prompts import prompt_map
@@ -24,7 +24,14 @@ def process_answer(raw_answer):
 samplers = {
     'greedy': greedy(),
     # update these to use different k etc.
-    'multinomial': multinomial()
+    'multinomial': multinomial(),
+    'm8': multinomial(top_k=8),
+    'm4': multinomial(top_k=4),
+    'm2': multinomial(top_k=2),
+    'beam1': beam_search(beams=1),
+    'beam2': beam_search(beams=2),
+    'beam4': beam_search(beams=4),
+    'beam8': beam_search(beams=8)
 }
 
 if __name__ == "__main__":
