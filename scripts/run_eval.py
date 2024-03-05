@@ -21,17 +21,15 @@ def process_answer(raw_answer):
     return int(commas_removed)
 
 # should eventually be moved somewhere
+# need to be updated with the n_samples
 samplers = {
-    'greedy': greedy(),
+    'greedy': lambda n_samples: greedy(),
     # update these to use different k etc.
-    'multinomial': multinomial(),
-    'm8': multinomial(top_k=8),
-    'm4': multinomial(top_k=4),
-    'm2': multinomial(top_k=2),
-    'beam1': beam_search(beams=1),
-    'beam2': beam_search(beams=2),
-    'beam4': beam_search(beams=4),
-    'beam8': beam_search(beams=8)
+    'multinomial': lambda n_samples: multinomial(samples=n_samples),
+    'm8': lambda n_samples: multinomial(top_k=8, samples=n_samples),
+    'm4': lambda n_samples: multinomial(top_k=4, samples=n_samples),
+    'm2': lambda n_samples: multinomial(top_k=2, samples=n_samples),
+    'beam': lambda n_samples: beam_search(beams=n_samples),
 }
 
 if __name__ == "__main__":
@@ -79,6 +77,10 @@ if __name__ == "__main__":
                         choices=list(samplers.keys()),
                         help="selects sampler to use during generation"
                         )
+    parser.add_argument('--num_samples',
+                        default=1,
+                        type=int,
+                        help="number of samples used by sampler")
     parser.add_argument('--db',
                         dest='db_name',
                         default='results.db',
@@ -96,7 +98,7 @@ if __name__ == "__main__":
     regex_structure = struct_info[args.struct]['regex']
     process_response = struct_info[args.struct]['processor']
     model_name = args.model_name
-    sampler = samplers[args.sampler]
+    sampler = samplers[args.sampler](args.num_samples)
     db_name = args.db_name
     sub_set = args.sub_set
     batch_size = args.b
