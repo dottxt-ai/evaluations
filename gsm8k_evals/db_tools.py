@@ -88,15 +88,16 @@ def leaderboard(db, min_obs=0):
         result = cur.execute(
             """
             with summary as
-            (SELECT eval_id, count(eval_id) as total, avg(bad_parse) as pe, avg(correct) as acc
+            (SELECT eval_id, count(eval_id) as total, avg(bad_parse) as pe, 
+            avg(maj_correct) as maj_acc, avg(pass_correct) as pass_acc
             from results
             group by eval_id)
-            SELECT model, sub_set, prompt_name, struct_name, sampler, total, acc, pe
+            SELECT model, sub_set, prompt_name, struct_name, sampler, n_samples, total, maj_acc, pass_acc
             from evaluations
             join summary
             on evaluations.rowid = summary.eval_id
             where total > ?
-            order by model, acc desc, pe
+            order by model, maj_acc desc, pass_acc
             """, (min_obs,)
         ).fetchall()
     return result
