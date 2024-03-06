@@ -183,7 +183,9 @@ if __name__ == "__main__":
         # I think this should be considered a bug in outlines
         if batch_size == 1:
             raw_answers = [raw_answers]
+        outcomes = []
         for p_i, _ in enumerate(raw_answers):
+
             i = start_i + p_i
             q_data = {
                 'db': db_name,
@@ -197,15 +199,19 @@ if __name__ == "__main__":
             q_data['maj_correct'] = majority_vote(raw_answers[p_i],
                                                numeric_answers[i],
                                                process_response)
+            if q_data['maj_correct']:
+                outcomes.append('.')
+            else:
+                outcomes.append('F')
             q_data['pass_correct'] = all_pass(raw_answers[p_i],
                                               numeric_answers[i],
                                               process_response)
             db_tools.add_result(**q_data)
-        # get this printing again  
-        if not(i == 0) and (i % 25 == 0):
+        for outcome in outcomes:
+            print(outcome,end='',sep='') 
+        if not(i == 0) and ((i % 25) < batch_size):
             print("")
-            print(f"[{i}] ",end='')
+            print(f"[{i}] ",end='',)
             print(db_tools.display_eval_results(db_name, eval_id))
-        print("")
     db_tools.update_evaluation_end(db_name, eval_id)
     print(db_tools.display_eval_results(db_name, eval_id))

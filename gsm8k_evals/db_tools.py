@@ -64,11 +64,11 @@ def eval_results(db, eval_id):
         result = cur.execute(
             """
             with summary as
-            (SELECT eval_id, count(eval_id) as total, avg(maj_correct) as acc
+            (SELECT eval_id, count(eval_id) as total, avg(maj_correct) as maj_acc, avg(pass_correct) as pass_acc
             from results
             where eval_id = ?
             group by eval_id)
-            SELECT model, prompt_name, struct_name, total, acc
+            SELECT model, prompt_name, struct_name, total, maj_acc, pass_acc
             from evaluations
             join summary
             on evaluations.rowid = summary.eval_id;
@@ -77,7 +77,7 @@ def eval_results(db, eval_id):
     return result
 
 def display_eval_results(db, eval_id):
-    out = "{0}-{1}-{2} {3} obs - ACC: {4:0.4f} PE:  time: <TBD>"
+    out = "{0}-{1}-{2} {3} obs - MAJ_ACC: {4:0.4f} PASS_ACC: {5:0.4f} "
     result = eval_results(db, eval_id)
     print(f"<<<{result}>>>")
     return out.format(*result)
