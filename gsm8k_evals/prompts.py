@@ -201,7 +201,7 @@ def json_m_8(question):
     text_json = json.dumps(examples_dicts)
     return text_json.strip("[]}")[0:-1]
 
-prompt_map = {
+prompt_map = { 
     'standard_8': standard_8,
     'json_hr_8': json_hr_8,
     'json_m_8': json_m_8
