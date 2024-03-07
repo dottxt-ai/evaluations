@@ -9,29 +9,23 @@ import torch
 import json
 from gsm8k_evals.prompts import prompt_map, standard_prompter
 from gsm8k_evals.structure import struct_info
+from gsm8k_evals.processing import (
+    process_answer, majority_vote, all_pass
+    )
 from gsm8k_evals import db_tools
 import re
 import argparse
 
-# this can be moved some place one we pull out the datasets
-def process_answer(raw_answer):
-    answer_string = raw_answer.split("#### ")[-1]
-    # Note: they do NOT do this cleanup
-    commas_removed = re.sub(",","",answer_string)
-    return int(commas_removed)
 
 # should eventually be moved somewhere
 samplers = {
-    'greedy': greedy(),
+    'greedy': lambda n_samples: greedy(),
     # update these to use different k etc.
-    'multinomial': multinomial(),
-    'm8': multinomial(top_k=8),
-    'm4': multinomial(top_k=4),
-    'm2': multinomial(top_k=2),
-    'beam1': beam_search(beams=1),
-    'beam2': beam_search(beams=2),
-    'beam4': beam_search(beams=4),
-    'beam8': beam_search(beams=8)
+    'multinomial': lambda n_samples: multinomial(samples=n_samples),
+    'm8': lambda n_samples: multinomial(top_k=8, samples=n_samples),
+    'm4': lambda n_samples: multinomial(top_k=4, samples=n_samples),
+    'm2': lambda n_samples: multinomial(top_k=2, samples=n_samples),
+    'beam': lambda n_samples: beam_search(beams=n_samples),
 }
 
 if __name__ == "__main__":
@@ -86,6 +80,10 @@ if __name__ == "__main__":
                         choices=list(samplers.keys()),
                         help="selects sampler to use during generation"
                         )
+    parser.add_argument('--num_samples',
+                        default=1,
+                        type=int,
+                        help="number of samples used by sampler")
     parser.add_argument('--db',
                         dest='db_name',
                         default='results.db',
@@ -104,7 +102,7 @@ if __name__ == "__main__":
     regex_structure = struct_info[args.struct]['regex']
     process_response = struct_info[args.struct]['processor']
     model_name = args.model_name
-    sampler = samplers[args.sampler]
+    sampler = samplers[args.sampler](args.num_samples)
     db_name = args.db_name
     sub_set = args.sub_set
     batch_size = args.b
@@ -118,6 +116,7 @@ if __name__ == "__main__":
         "sub_set": sub_set,
         "start_time": datetime.now(),
         "sampler": args.sampler,
+        "n_samples": args.num_samples,
         "prompt_name": args.prompt,
         "struct_name": args.struct,
     }
@@ -182,15 +181,17 @@ if __name__ == "__main__":
     else:
         test_response = generator(prompter(dataset[sub_set]['question'][19]), 
                             max_tokens=512)
+    if args.sampler == "greedy" or args.num_samples == 1:
+        test_response = [test_response]
     print("------raw response--")
-    print(test_response)
+    print(test_response[0])
     print("------processed response--")
-    print(process_response(test_response))
+    print(process_response(test_response[0]))
     print("---Running evaluation---")
     last_i = args.i + args.n
 
     start_t = datetime.now()
-    # need to update this to work with batches.
+    # Main loop
     for start_i in range(args.i,last_i, batch_size):
         end_i = min(start_i+batch_size,last_i)
         prompts = [prompter(dataset[sub_set]['question'][i])
@@ -199,45 +200,35 @@ if __name__ == "__main__":
         # I think this should be considered a bug in outlines
         if batch_size == 1:
             raw_answers = [raw_answers]
-        for p_i, _ in enumerate(prompts):
+        outcomes = []
+        for p_i, _ in enumerate(raw_answers):
+
             i = start_i + p_i
             q_data = {
                 'db': db_name,
                 'eval_id': eval_id,
                 'question_number': i,
-                'start_time': datetime.now()
+                'raw_answer': None,
+                'bad_parse': None
+
             }
             q_data['realized_prompt'] = prompts[p_i]
-            q_data['raw_answer'] = raw_answers[p_i]
-            try:
-                q_data['answer'] = process_response(q_data['raw_answer'])
-                q_data['bad_parse'] = False
-            except json.JSONDecodeError as e:
-                print(f"error at q:{i}")
-                print(q_data['raw_answer'])
-                q_data['answer'] = 0
-                q_data['bad_parse'] = True
-            # just a heuristic    
-            if (regex_structure is None) and (q_data['answer'] == 0):
-                q_data['bad_parse'] = True
-        
-            q_data['correct'] = q_data['answer'] == numeric_answers[i]
-            if q_data['correct']:
-                print('.',end='')
-            elif q_data['bad_parse']:
-                print('X',end='')
+            q_data['maj_correct'] = majority_vote(raw_answers[p_i],
+                                               numeric_answers[i],
+                                               process_response)
+            if q_data['maj_correct']:
+                outcomes.append('.')
             else:
-                print('F',end='')
-            # time is a bit off now for batching
-            # this should eventually be cleaned up.
-            q_data['end_time'] = datetime.now()
+                outcomes.append('F')
+            q_data['pass_correct'] = all_pass(raw_answers[p_i],
+                                              numeric_answers[i],
+                                              process_response)
             db_tools.add_result(**q_data)
-            sys.stdout.flush()
-        # this won't work right with batching    
-        if not(i == 0) and (i % 25 == 0):
+        for outcome in outcomes:
+            print(outcome,end='',sep='') 
+        if not(i == 0) and ((i % 25) < batch_size):
             print("")
-            print(f"[{i}] ",end='')
+            print(f"[{i}] ",end='',)
             print(db_tools.display_eval_results(db_name, eval_id))
-        print("")
     db_tools.update_evaluation_end(db_name, eval_id)
     print(db_tools.display_eval_results(db_name, eval_id))
