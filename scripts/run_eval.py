@@ -49,13 +49,13 @@ if __name__ == "__main__":
                         help='specify batch size')
     parser.add_argument('--prompt',
                         dest='prompt',
-                        default='standard_8',
+                        default='standard',
                         choices=list(prompt_map.keys()),
                         help='prompt style to use')
     parser.add_argument('--cot', action=argparse.BooleanOptionalAction, 
                         default=True,
                         help='whether or not to use Chain-of-though')
-    parser.add_argument('--nshot',
+    parser.add_argument('--n_shot',
                         default=8,
                         type=int,
                         help="number of examples to use in prompt")
@@ -96,9 +96,9 @@ if __name__ == "__main__":
                         )
     
     args = parser.parse_args()
-    print(f"<<<COT: {args.cot} NSHOT: {args.nshot}>>>")
+    print(f"<<<COT: {args.cot} n_shot: {args.n_shot}>>>")
     device=args.device
-    prompter = prompt_map[args.prompt]
+    prompter = prompt_map[args.prompt](cot=args.cot, n_shot=args.n_shot)
     regex_structure = struct_info[args.struct]['regex']
     process_response = struct_info[args.struct]['processor']
     model_name = args.model_name
@@ -115,6 +115,8 @@ if __name__ == "__main__":
         "dataset": "gsm8k",
         "sub_set": sub_set,
         "start_time": datetime.now(),
+        "cot": args.cot,
+        "n_shot": args.n_shot,
         "sampler": args.sampler,
         "n_samples": args.num_samples,
         "prompt_name": args.prompt,
@@ -129,15 +131,10 @@ if __name__ == "__main__":
         
     print(f"Test questions: {len(dataset[sub_set])}")
     if regex_structure is None:
-        alt_prompter = standard_prompter(n_shot=args.nshot,cot=args.cot)
         print("performing unstructured generation")
         prompt_sample = prompter(dataset[sub_set]['question'][0])
-        prompt_sample_alt = alt_prompter(dataset[sub_set]['question'][0])
         print("----PROMPT-----")
         print(prompt_sample)
-        print("---END PROMPT---")
-        print("----ALT PROMPT-----")
-        print(prompt_sample_alt)
         print("---END PROMPT---")
     else:
         print("----Debugging Regex----")
@@ -212,7 +209,6 @@ if __name__ == "__main__":
                 'bad_parse': None
 
             }
-            q_data['realized_prompt'] = prompts[p_i]
             q_data['maj_correct'] = majority_vote(raw_answers[p_i],
                                                numeric_answers[i],
                                                process_response)

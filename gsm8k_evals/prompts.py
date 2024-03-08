@@ -49,7 +49,7 @@ qa_8 = [
 def standard_prompter(n_shot=8, cot=True, examples=qa_8):
     if cot:
       base_prompt = "\n\n".join([
-          f"Q: {ex['question']}\nA:{ex['reasoning']}. The answer is {ex['answer']}." 
+          f"Q: {ex['question']}\nA: {ex['reasoning']} The answer is {ex['answer']}." 
           for ex in examples[0:n_shot]
       ])
     else:
@@ -202,7 +202,7 @@ def json_m_8(question):
     return text_json.strip("[]}")[0:-1]
 
 prompt_map = { 
-    'standard_8': standard_8,
+    'standard': standard_prompter,
     'json_hr_8': json_hr_8,
     'json_m_8': json_m_8
 }
