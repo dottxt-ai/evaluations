@@ -7,7 +7,7 @@ import outlines
 from outlines.samplers import greedy, multinomial, beam_search
 import torch
 import json
-from gsm8k_evals.prompts import prompt_map
+from gsm8k_evals.prompts import prompt_map, standard_prompter
 from gsm8k_evals.structure import struct_info
 from gsm8k_evals.processing import (
     process_answer, majority_vote, all_pass
@@ -49,9 +49,16 @@ if __name__ == "__main__":
                         help='specify batch size')
     parser.add_argument('--prompt',
                         dest='prompt',
-                        default='standard_8',
+                        default='standard',
                         choices=list(prompt_map.keys()),
                         help='prompt style to use')
+    parser.add_argument('--cot', action=argparse.BooleanOptionalAction, 
+                        default=True,
+                        help='whether or not to use Chain-of-thought')
+    parser.add_argument('--n_shot',
+                        default=8,
+                        type=int,
+                        help="number of examples to use in prompt")
     parser.add_argument('--struct',
                         dest='struct',
                         default='unstruct_qa',
@@ -90,7 +97,7 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     device=args.device
-    prompter = prompt_map[args.prompt]
+    prompter = prompt_map[args.prompt](cot=args.cot, n_shot=args.n_shot)
     regex_structure = struct_info[args.struct]['regex']
     process_response = struct_info[args.struct]['processor']
     model_name = args.model_name
@@ -107,6 +114,8 @@ if __name__ == "__main__":
         "dataset": "gsm8k",
         "sub_set": sub_set,
         "start_time": datetime.now(),
+        "cot": args.cot,
+        "n_shot": args.n_shot,
         "sampler": args.sampler,
         "n_samples": args.num_samples,
         "prompt_name": args.prompt,
@@ -122,10 +131,14 @@ if __name__ == "__main__":
     print(f"Test questions: {len(dataset[sub_set])}")
     if regex_structure is None:
         print("performing unstructured generation")
+        prompt_sample = prompter(dataset[sub_set]['question'][0])
+        print("----PROMPT-----")
+        print(prompt_sample)
+        print("---END PROMPT---")
     else:
         print("----Debugging Regex----")
-        prompt_sample = prompter(dataset[sub_set]['question'][0])
         print(f"REGEX: {regex_structure}")
+        prompt_sample = prompter(dataset[sub_set]['question'][0])
         print("Testing regex (should find 8 samples):")
         regex_found = re.findall(regex_structure,prompt_sample)
         print(f"Found {len(regex_found)}/8")
@@ -148,7 +161,7 @@ if __name__ == "__main__":
     if regex_structure is None:
         stop_str = struct_info[args.struct]['stop_at']
         generator = outlines.generate.text(model,
-                                           sampler=sampler)
+                                        sampler=sampler)
     else:
         generator = outlines.generate.regex(
             model,
@@ -185,20 +198,20 @@ if __name__ == "__main__":
             raw_answers = [raw_answers]
         outcomes = []
         for p_i, _ in enumerate(raw_answers):
-
             i = start_i + p_i
             q_data = {
                 'db': db_name,
                 'eval_id': eval_id,
                 'question_number': i,
+                'realized_prompt': prompts[p_i],
                 'raw_answer': None,
                 'bad_parse': None
 
             }
-            q_data['realized_prompt'] = prompts[p_i]
-            q_data['maj_correct'] = majority_vote(raw_answers[p_i],
-                                               numeric_answers[i],
-                                               process_response)
+            maj = majority_vote(raw_answers[p_i],
+                                numeric_answers[i],
+                                process_response)
+            q_data['maj_correct'] = maj 
             if q_data['maj_correct']:
                 outcomes.append('.')
             else:

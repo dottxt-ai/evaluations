@@ -6,7 +6,7 @@ def create_evaluation_table(db):
         cur = con.cursor()
         result = cur.execute("""
         CREATE TABLE IF NOT EXISTS evaluations(model, dataset, sub_set, 
-        start_time, end_time, sampler, n_samples, prompt_name, struct_name);
+        start_time, end_time, cot, n_shot, sampler, n_samples, prompt_name, struct_name);
         """).fetchall()
         con.commit()
     return result
@@ -21,13 +21,13 @@ def create_result_table(db):
         con.commit()
     return result
 
-def add_evaluation(db, model, dataset, sub_set, start_time, sampler, n_samples, prompt_name, struct_name):
+def add_evaluation(db, model, dataset, sub_set, start_time, cot, n_shot, sampler, n_samples, prompt_name, struct_name):
     with sqlite3.connect(db) as con:
         cur = con.cursor()
         cur.execute("""
-        INSERT INTO evaluations (model, dataset, sub_set, start_time, sampler, n_samples, prompt_name, struct_name)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, [model, dataset, sub_set, start_time, sampler, n_samples, prompt_name, struct_name])
+        INSERT INTO evaluations (model, dataset, sub_set, start_time, cot, n_shot, sampler, n_samples, prompt_name, struct_name)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, [model, dataset, sub_set, start_time,  cot, n_shot, sampler, n_samples, prompt_name, struct_name])
         result = cur.lastrowid
         con.commit()
     return result
