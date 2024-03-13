@@ -54,7 +54,7 @@ if __name__ == "__main__":
                         help='prompt style to use')
     parser.add_argument('--cot', action=argparse.BooleanOptionalAction, 
                         default=True,
-                        help='whether or not to use Chain-of-though')
+                        help='whether or not to use Chain-of-thought')
     parser.add_argument('--n_shot',
                         default=8,
                         type=int,
@@ -96,7 +96,6 @@ if __name__ == "__main__":
                         )
     
     args = parser.parse_args()
-    print(f"<<<COT: {args.cot} n_shot: {args.n_shot}>>>")
     device=args.device
     prompter = prompt_map[args.prompt](cot=args.cot, n_shot=args.n_shot)
     regex_structure = struct_info[args.struct]['regex']
@@ -199,19 +198,20 @@ if __name__ == "__main__":
             raw_answers = [raw_answers]
         outcomes = []
         for p_i, _ in enumerate(raw_answers):
-
             i = start_i + p_i
             q_data = {
                 'db': db_name,
                 'eval_id': eval_id,
                 'question_number': i,
+                'realized_prompt': prompts[p_i],
                 'raw_answer': None,
                 'bad_parse': None
 
             }
-            q_data['maj_correct'] = majority_vote(raw_answers[p_i],
-                                               numeric_answers[i],
-                                               process_response)
+            maj = majority_vote(raw_answers[p_i],
+                                numeric_answers[i],
+                                process_response)
+            q_data['maj_correct'] = maj 
             if q_data['maj_correct']:
                 outcomes.append('.')
             else:

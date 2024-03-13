@@ -58,8 +58,40 @@ def standard_prompter(n_shot=8, cot=True, examples=qa_8):
           for ex in examples[0:n_shot]
       ])
     def prompter(question):
-        return base_prompt + f"\n\nQ: {question}\nA:"
+        # for consistency, keep this but the A should be added
+        # return base_prompt + f"\n\nQ: {question}\nA:"
+       return base_prompt + f"\n\nQ: {question}\n"
     return prompter
+
+def json_hr_prompter(n_shot=8, cot=True, examples=qa_8):
+  if cot:
+      base_prompt = ",\n".join([
+"""{{
+ "question": "{0}",
+ "response": {{
+    "reasoning": "{1}",
+    "answer": {2}
+   }},
+}}
+""".format(ex['question'],ex['reasoning'], ex['answer']) for ex in examples
+      ])
+  else:
+    base_prompt = ",\n".join([
+       """{{
+ "question": "{0}",
+ "response": {{
+    "answer": {1}
+   }},
+}}
+""".format(ex['question'], ex['answer']) for ex in examples
+     ])
+  def prompter(question):
+     return base_prompt + """{0}
+  "question": "{1}",
+  "response":
+  """.format("{",question)
+  return prompter
+
 
 # keep this around until you've confirmed it's identical
 def standard_8(question):
@@ -71,7 +103,9 @@ Q: Shawn has five toys. For Christmas, he got two toys each from his mom and dad
 Q: There were nine computers in the server room. Five more computers were installed each day, from monday to thursday. How many computers are now in the server room?\nA: There were originally 9 computers. For each of 4 days, 5 more computers were added. So 5 * 4 = 20 computers were added. 9 + 20 is 29. The answer is 29.\n\n\
 Q: Michael had 58 golf balls. On tuesday, he lost 23 golf balls. On wednesday, he lost 2 more. How many golf balls did he have at the end of wednesday?\nA: Michael started with 58 golf balls. After losing 23 on tuesday, he had 58 - 23 = 35. After losing 2 more, he had 35 - 2 = 33 golf balls. The answer is 33.\n\n\
 Q: Olivia has $23. She bought five bagels for $3 each. How much money does she have left?\nA: Olivia had 23 dollars. 5 bagels for 3 dollars each will be 5 x 3 = 15 dollars. So she has 23 - 15 dollars left. 23 - 15 is 8. The answer is 8.\n\n\
-Q: {question}\nA:""".format(question=question)
+Q: {question}\n""".format(question=question)
+
+
 
 
 @outlines.prompt
@@ -203,6 +237,8 @@ def json_m_8(question):
 
 prompt_map = { 
     'standard': standard_prompter,
-    'json_hr_8': json_hr_8,
-    'json_m_8': json_m_8
+    'json_hr': json_hr_prompter,
+    # legacy
+    'json_hr_8': lambda *args: json_hr_8,
+    'json_m_8': lambda *args: json_m_8
 }
