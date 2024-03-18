@@ -21,9 +21,12 @@ regex_hr_50_700 = r'\{\n    "reasoning": "[\w \d\.\*\-=\+,\?/]{50,700}",\n    "a
 
 # very similar to the data set range
 regex_hr_50_1000 = r'\{\n    "reasoning": "[\w\s\d\.\*\-=+,\?/]{50,1000}",\n    "answer": [1-9][0-9]{0,9}\n   \}'
-regex_qa_300 = r'A: [\w \d\.\*\-=\+,\?/]{10,300}\. The answer is [1-9][0-9]{0,9}\.\n'
-regex_qa_50_500 = r'A: [\w \d\.\*\-=\+,\?/]{50,500}\. The answer is [1-9][0-9]{0,9}\.\n'
-regex_qa_50_700 = r'A: [\w \d\.\*\-=\+,\?/]{50,700}\. The answer is [1-9][0-9]{0,9}\.\n'
+# for testing quick evaluations.
+regex_qa_10_50 = r'A: [\w \.\*\-=\+,\?/]{10,50}\. The answer is [1-9][0-9]{0,9}\.\n'
+regex_qa_300 = r'A: [\w \.\*\-=\+,\?/]{10,300}\. The answer is [1-9][0-9]{0,9}\.\n'
+regex_qa_50_500 = r'A: [\w \.\*\-=\+,\?/]{50,500}\. The answer is [1-9][0-9]{0,9}\.\n'
+regex_qa_50_700 = r'A: [\w \.\*\-=\+,\?/]{50,700}\. The answer is [1-9][0-9]{0,9}\.\n'
+regex_qa_200_700 = r'A: [\w \.\*\-=\+,\?/]{50,700}\. The answer is [1-9][0-9]{0,6}\.\n'
 
 def process_raw_json_response(response):
     return json.loads(response)['answer']
@@ -109,6 +112,10 @@ struct_info = {
         'regex': regex_hr_50_1000,
         'processor': process_raw_json_response
     },
+    'regex_qa_10_50': {
+        'regex': regex_qa_10_50,
+        'processor': process_eval_harness
+    },
     'regex_qa_300': {
         'regex': regex_qa_300,
         'processor': process_eval_harness
@@ -119,6 +126,10 @@ struct_info = {
     },
     'regex_qa_50_700': {
         'regex': regex_qa_50_700,
+        'processor': process_eval_harness
+    },
+    'regex_qa_200_700': {
+        'regex': regex_qa_200_700,
         'processor': process_eval_harness
     }
 }
