@@ -22,6 +22,8 @@ def majority_vote(results, answer, processor=process_answer):
     return model_answer == answer
 
 def all_pass(results, answer, processor=process_answer):
+    if not isinstance(results, list):
+        results = [results]
     processed_results = apply_processor(results, processor)
     return any([
         result == answer for result in processed_results

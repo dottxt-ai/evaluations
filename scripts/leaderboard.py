@@ -16,7 +16,6 @@ if __name__ == "__main__":
     db_name = args.db_name
     min_obs = args.min_obs
     board = db_tools.leaderboard(db_name,min_obs)
-    print(board)
     # this can be easily cleaned up
     fields = ["model_name","sub_set","prompt","struct","sampler", "num_samples",
               "total","maj_acc","pass_acc"]
@@ -25,7 +24,6 @@ if __name__ == "__main__":
         for i, v in enumerate(fields)
     }
     header = [k.ljust(v,' ') for k,v in field_len.items()]
-    print(f"<<<{header}>>>")
     header_str = "{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}".format(*header)
     print(header_str)
     print("-"*len(header_str))
