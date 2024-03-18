@@ -30,13 +30,13 @@ While there are many configuration options only a few are really needed to repro
 First run the unstructured evaluation...
 
 ```
-python ./scripts/run_eval.py -i 0 -n 1319 --model <MODEL_NAME> --prompt standard_8 --struct unstruct_qa --db experiments.db
+python ./scripts/run_eval.py -i 0 -n 1319 --model <MODEL_NAME> --prompt standard --struct unstruct_qa --db experiments.db
 ```
 
 The run the structured evaluation...
 
 ```
-python ./scripts/run_eval.py -i 0 -n 1319 --model <MODEL_NAME>  --prompt standard_8 --struct regex_qa_50_700 --db experiments.db
+python ./scripts/run_eval.py -i 0 -n 1319 --model <MODEL_NAME>  --prompt standard --struct regex_qa_50_700 --db experiments.db
 ```
 
 More details can be found by browsing the source code or using `--help`.
