@@ -17,14 +17,14 @@ if __name__ == "__main__":
     min_obs = args.min_obs
     board = db_tools.leaderboard(db_name,min_obs)
     # this can be easily cleaned up
-    fields = ["model_name","sub_set","prompt","struct","sampler", "num_samples",
+    fields = ["model_name","sub_set","prompt","struct","n_shot", "sampler", "num_samples",
               "total","maj_acc","pass_acc"]
     field_len = {
         v: max([len(v)]+[len(str(result[i])) for result in board])
         for i, v in enumerate(fields)
     }
     header = [k.ljust(v,' ') for k,v in field_len.items()]
-    header_str = "{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}".format(*header)
+    header_str = "{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}|{9}".format(*header)
     print(header_str)
     print("-"*len(header_str))
     for result in board:

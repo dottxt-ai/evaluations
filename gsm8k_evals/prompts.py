@@ -63,6 +63,23 @@ def standard_prompter(n_shot=8, cot=True, examples=qa_8):
        return base_prompt + f"\n\nQ: {question}\n"
     return prompter
 
+def alt_1_prompter(n_shot=8, cot=True, examples=qa_8):
+    if cot:
+      base_prompt = "\n\n".join([
+          f"Question - {ex['question']}\nAnswer - {ex['reasoning']} The answer is {ex['answer']}." 
+          for ex in examples[0:n_shot]
+      ])
+    else:
+      base_prompt = "\n\n".join([
+          f"Question - {ex['question']}\nAnswer - The answer is {ex['answer']}." 
+          for ex in examples[0:n_shot]
+      ])
+    def prompter(question):
+        # for consistency, keep this but the A should be added
+        # return base_prompt + f"\n\nQ: {question}\nA:"
+       return base_prompt + f"\n\nQuestion - {question}\n"
+    return prompter   
+
 def json_hr_prompter(n_shot=8, cot=True, examples=qa_8):
   if cot:
       base_prompt = ",\n".join([
@@ -237,6 +254,7 @@ def json_m_8(question):
 
 prompt_map = { 
     'standard': standard_prompter,
+    'alt_1': alt_1_prompter,
     'json_hr': json_hr_prompter,
     # legacy
     'json_hr_8': lambda *args: json_hr_8,

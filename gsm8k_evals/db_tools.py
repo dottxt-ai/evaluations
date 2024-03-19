@@ -79,7 +79,6 @@ def eval_results(db, eval_id):
 def display_eval_results(db, eval_id):
     out = "{0}-{1}-{2} {3} obs - MAJ_ACC: {4:0.4f} PASS_ACC: {5:0.4f} "
     result = eval_results(db, eval_id)
-    print(f"<<<{result}>>>")
     return out.format(*result)
 
 def leaderboard(db, min_obs=0):
@@ -92,7 +91,7 @@ def leaderboard(db, min_obs=0):
             avg(maj_correct) as maj_acc, avg(pass_correct) as pass_acc
             from results
             group by eval_id)
-            SELECT model, sub_set, prompt_name, struct_name, sampler, n_samples, total, maj_acc, pass_acc
+            SELECT model, sub_set, prompt_name, struct_name, n_shot, sampler, n_samples, total, maj_acc, pass_acc
             from evaluations
             join summary
             on evaluations.rowid = summary.eval_id
